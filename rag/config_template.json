@@ -1,0 +1,8 @@
+{
+  "openaiKey": "insert your OpenAI API key here",
+  "googleProjectId": "insert your Google Project ID here",
+  "googleAiKey": "insert your Google AI API key here",
+  "openaiEmbeddingModel": "text-embedding-3-small",
+  "googleEmbeddingModel": "text-embedding-004",
+  "sentenceTransformerModel": "multi-qa-mpnet-base-cos-v1"
+}

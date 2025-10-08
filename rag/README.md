@@ -6,6 +6,7 @@ This project generates embeddings for text data using different AI providers.
 
 - `openai_embeddings.py`: Generates embeddings using OpenAI's API
 - `google_embeddings.py`: Generates embeddings using Google's Vertex AI
+- `google_genai_embeddings.py`: Generates embeddings using Google's Generative AI (API key)
 - `free_embeddings.py`: Generates embeddings using Sentence Transformers (free)
 - `config_loader.py`: Common module for loading configuration from `config.json`
 - `base_embedding.py`: Common module with shared embedding functionality
@@ -22,6 +23,13 @@ This project generates embeddings for text data using different AI providers.
    - For Google: Add your Google Project ID
    - Embedding models for each provider can be configured in the config file
 
+3. For Google Cloud authentication, you need to set up Application Default Credentials (ADC):
+   - Install the Google Cloud CLI: https://cloud.google.com/sdk/docs/install
+   - Run `gcloud auth application-default login` to authenticate
+   - Or set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to point to your service account key file
+
+4. Copy `config_template.json` to `config.json` and fill in your credentials:
+
 ## Usage
 
 Run any of the embedding scripts directly:
@@ -29,6 +37,7 @@ Run any of the embedding scripts directly:
 ```bash
 python openai_embeddings.py
 python google_embeddings.py
+python google_genai_embeddings.py
 python free_embeddings.py
 ```
 

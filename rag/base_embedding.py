@@ -150,7 +150,7 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
         return
     
     # Delete input files
-    for file_to_delete in [input_talks_file, input_paragraphs_file]:
-        if os.path.exists(file_to_delete):
-            os.remove(file_to_delete)
-            print(f"Deleted file: {file_to_delete}")
+    # for file_to_delete in [input_talks_file, input_paragraphs_file]:
+    #     if os.path.exists(file_to_delete):
+    #         os.remove(file_to_delete)
+    #         print(f"Deleted file: {file_to_delete}")

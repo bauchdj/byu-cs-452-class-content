@@ -3,16 +3,25 @@ from vertexai.language_models import TextEmbeddingModel
 from config_loader import load_config, get_google_project_id, get_google_embedding_model
 from base_embedding import process_in_batches, process_csv_files
 
-# Load configuration
-config = load_config()
-google_project_id = get_google_project_id(config)
-google_model = get_google_embedding_model(config)
+try:
+    # Load configuration
+    config = load_config()
+    google_project_id = get_google_project_id(config)
+    google_model = get_google_embedding_model(config)
 
-# Initialize Vertex AI
-vertexai.init(project=google_project_id, location="us-central1")
+    # Initialize Vertex AI
+    vertexai.init(project=google_project_id, location="us-central1")
 
-# Initialize the model
-model = TextEmbeddingModel.from_pretrained(google_model)
+    # Initialize the model
+    model = TextEmbeddingModel.from_pretrained(google_model)
+except Exception as e:
+    print(f"Error initializing Google Vertex AI: {e}")
+    print("\nTo resolve this issue:")
+    print("1. Ensure you have set up Google Cloud Application Default Credentials (ADC)")
+    print("2. Install Google Cloud CLI and run: gcloud auth application-default login")
+    print("3. Or set the GOOGLE_APPLICATION_CREDENTIALS environment variable")
+    print("4. Make sure your config.json file contains a valid Google Project ID")
+    raise
 
 def get_google_embeddings(texts, model_name=None):
     """
