@@ -82,5 +82,6 @@ if __name__ == "__main__":
         "SCRAPED_PARAGRAPHS.csv",
         "google_genai",
         process_google_genai_embeddings,
-        "google_genai"
+        "google_genai",
+        resume=True
     )

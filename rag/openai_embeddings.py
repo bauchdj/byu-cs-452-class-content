@@ -48,5 +48,6 @@ if __name__ == "__main__":
         "SCRAPED_PARAGRAPHS.csv",
         "openai",
         process_openai_embeddings,
-        "openai"
+        "openai",
+        resume=True
     )

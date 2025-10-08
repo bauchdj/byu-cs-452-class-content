@@ -105,7 +105,7 @@ def save_embeddings_to_csv(texts, embeddings, output_file):
     df.to_csv(output_file, index=False)
     
 
-def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, process_func, prefix):
+def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, process_func, prefix, resume=True):
     """
     Process CSV files and generate embeddings.
     
@@ -115,6 +115,7 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
         output_dir: Directory to save output files
         process_func: Function to process texts and generate embeddings
         prefix: Prefix for output files
+        resume: Whether to resume from existing output files if they exist
     """
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
@@ -124,11 +125,34 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
     # Process talks.csv
     if os.path.exists(input_talks_file):
         df_talks = pd.read_csv(input_talks_file)
-        talks_embeddings = process_func(df_talks['text'].tolist())
-        df_talks['embedding'] = talks_embeddings
         output_talks = os.path.join(output_dir, f'{prefix}_talks.csv')
-        df_talks.to_csv(output_talks, index=False)
-        print(f"Saved talks embeddings to {output_talks}")
+        
+        # Check if we should resume from existing output
+        if resume and os.path.exists(output_talks):
+            print(f"Resuming from existing {output_talks}")
+            df_output_talks = pd.read_csv(output_talks)
+            processed_count = len(df_output_talks)
+            total_count = len(df_talks)
+            
+            if processed_count < total_count:
+                print(f"Resuming talks processing from record {processed_count}/{total_count}")
+                remaining_texts = df_talks['text'].tolist()[processed_count:]
+                remaining_embeddings = process_func(remaining_texts)
+                
+                # Combine existing and new embeddings
+                all_embeddings = df_output_talks['embedding'].tolist() + remaining_embeddings
+                df_talks['embedding'] = all_embeddings
+                df_talks.to_csv(output_talks, index=False)
+                print(f"Saved talks embeddings to {output_talks}")
+            else:
+                print(f"Talks processing already complete ({processed_count} records)")
+                df_talks = df_output_talks  # Use existing data
+        else:
+            talks_embeddings = process_func(df_talks['text'].tolist())
+            df_talks['embedding'] = talks_embeddings
+            df_talks.to_csv(output_talks, index=False)
+            print(f"Saved talks embeddings to {output_talks}")
+        
         files_processed += 1
     else:
         print(f"Warning: {input_talks_file} not found, skipping...")
@@ -136,11 +160,34 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
     # Process paragraphs.csv
     if os.path.exists(input_paragraphs_file):
         df_paragraphs = pd.read_csv(input_paragraphs_file)
-        paragraphs_embeddings = process_func(df_paragraphs['text'].tolist())
-        df_paragraphs['embedding'] = paragraphs_embeddings
         output_paragraphs = os.path.join(output_dir, f'{prefix}_paragraphs.csv')
-        df_paragraphs.to_csv(output_paragraphs, index=False)
-        print(f"Saved paragraphs embeddings to {output_paragraphs}")
+        
+        # Check if we should resume from existing output
+        if resume and os.path.exists(output_paragraphs):
+            print(f"Resuming from existing {output_paragraphs}")
+            df_output_paragraphs = pd.read_csv(output_paragraphs)
+            processed_count = len(df_output_paragraphs)
+            total_count = len(df_paragraphs)
+            
+            if processed_count < total_count:
+                print(f"Resuming paragraphs processing from record {processed_count}/{total_count}")
+                remaining_texts = df_paragraphs['text'].tolist()[processed_count:]
+                remaining_embeddings = process_func(remaining_texts)
+                
+                # Combine existing and new embeddings
+                all_embeddings = df_output_paragraphs['embedding'].tolist() + remaining_embeddings
+                df_paragraphs['embedding'] = all_embeddings
+                df_paragraphs.to_csv(output_paragraphs, index=False)
+                print(f"Saved paragraphs embeddings to {output_paragraphs}")
+            else:
+                print(f"Paragraphs processing already complete ({processed_count} records)")
+                df_paragraphs = df_output_paragraphs  # Use existing data
+        else:
+            paragraphs_embeddings = process_func(df_paragraphs['text'].tolist())
+            df_paragraphs['embedding'] = paragraphs_embeddings
+            df_paragraphs.to_csv(output_paragraphs, index=False)
+            print(f"Saved paragraphs embeddings to {output_paragraphs}")
+        
         files_processed += 1
     else:
         print(f"Warning: {input_paragraphs_file} not found, skipping...")

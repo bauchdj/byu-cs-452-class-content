@@ -42,3 +42,7 @@ python free_embeddings.py
 ```
 
 Each script will process `SCRAPED_TALKS.csv` and `SCRAPED_PARAGRAPHS.csv` files and generate embeddings for the text content.
+
+## Resume Functionality
+
+All embedding scripts now support resuming from where they left off. If an output file already exists, the script will check how many records have been processed and resume from that point. This is particularly useful if the process was interrupted and you want to continue rather than start over.

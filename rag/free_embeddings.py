@@ -57,5 +57,6 @@ if __name__ == "__main__":
         "SCRAPED_PARAGRAPHS.csv",
         "free",
         process_free_embeddings,
-        "free"
+        "free",
+        resume=True
     )
