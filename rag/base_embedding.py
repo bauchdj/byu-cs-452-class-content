@@ -1,6 +1,7 @@
 import pandas as pd
 import tiktoken
 import os
+from tqdm import tqdm
 
 
 def prepare_texts_and_tokens(texts, model_name):
@@ -51,11 +52,16 @@ def process_in_batches(texts, process_batch_func, model_name="text-embedding-3-s
     current_batch = []
     current_token_count = 0
     
+    # Initialize progress bar
+    pbar = tqdm(total=len(cleaned_texts), desc="Processing texts")
+    
     for i, (text, token_count) in enumerate(zip(cleaned_texts, token_counts)):
         if current_token_count + token_count > max_tokens or len(current_batch) >= max_batch_size:
             # Process current batch
             batch_embeddings = process_batch_func(current_batch)
             embeddings.extend(batch_embeddings)
+            # Update progress bar
+            pbar.update(len(current_batch))
             # Reset batch
             current_batch = [text]
             current_token_count = token_count
@@ -67,14 +73,18 @@ def process_in_batches(texts, process_batch_func, model_name="text-embedding-3-s
     if current_batch:
         batch_embeddings = process_batch_func(current_batch)
         embeddings.extend(batch_embeddings)
+        # Update progress bar for final batch
+        pbar.update(len(current_batch))
+    
+    # Close progress bar
+    pbar.close()
     
     return embeddings
-
 def process_all_at_once(texts, process_func):
     """
     Process all texts at once with models that handle batching internally.
     
-    Args:
+{{ ... }}
         texts: List of strings to embed
         process_func: Function to process all texts at once
     
@@ -84,8 +94,15 @@ def process_all_at_once(texts, process_func):
     # Clean texts
     cleaned_texts = [text.replace("\n", " ") for text in texts]
     
+    # Initialize progress bar
+    pbar = tqdm(total=1, desc="Processing all texts")
+    
     # Process all texts at once
     embeddings = process_func(cleaned_texts)
+    
+    # Update and close progress bar
+    pbar.update(1)
+    pbar.close()
     
     return embeddings
 
@@ -137,7 +154,17 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
             if processed_count < total_count:
                 print(f"Resuming talks processing from record {processed_count}/{total_count}")
                 remaining_texts = df_talks['text'].tolist()[processed_count:]
-                remaining_embeddings = process_func(remaining_texts)
+                # Add progress bar for remaining texts
+                pbar = tqdm(total=len(remaining_texts), desc="Processing remaining talks")
+                def progress_wrapper(func):
+                    def wrapper(texts):
+                        result = func(texts)
+                        pbar.update(len(texts))
+                        return result
+                    return wrapper
+                wrapped_process_func = progress_wrapper(process_func)
+                remaining_embeddings = wrapped_process_func(remaining_texts)
+                pbar.close()
                 
                 # Combine existing and new embeddings
                 all_embeddings = df_output_talks['embedding'].tolist() + remaining_embeddings
@@ -148,7 +175,18 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
                 print(f"Talks processing already complete ({processed_count} records)")
                 df_talks = df_output_talks  # Use existing data
         else:
-            talks_embeddings = process_func(df_talks['text'].tolist())
+            talks_texts = df_talks['text'].tolist()
+            # Add progress bar for all texts
+            pbar = tqdm(total=len(talks_texts), desc="Processing talks")
+            def progress_wrapper(func):
+                def wrapper(texts):
+                    result = func(texts)
+                    pbar.update(len(texts))
+                    return result
+                return wrapper
+            wrapped_process_func = progress_wrapper(process_func)
+            talks_embeddings = wrapped_process_func(talks_texts)
+            pbar.close()
             df_talks['embedding'] = talks_embeddings
             df_talks.to_csv(output_talks, index=False)
             print(f"Saved talks embeddings to {output_talks}")
@@ -172,7 +210,17 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
             if processed_count < total_count:
                 print(f"Resuming paragraphs processing from record {processed_count}/{total_count}")
                 remaining_texts = df_paragraphs['text'].tolist()[processed_count:]
-                remaining_embeddings = process_func(remaining_texts)
+                # Add progress bar for remaining texts
+                pbar = tqdm(total=len(remaining_texts), desc="Processing remaining paragraphs")
+                def progress_wrapper(func):
+                    def wrapper(texts):
+                        result = func(texts)
+                        pbar.update(len(texts))
+                        return result
+                    return wrapper
+                wrapped_process_func = progress_wrapper(process_func)
+                remaining_embeddings = wrapped_process_func(remaining_texts)
+                pbar.close()
                 
                 # Combine existing and new embeddings
                 all_embeddings = df_output_paragraphs['embedding'].tolist() + remaining_embeddings
@@ -183,7 +231,18 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
                 print(f"Paragraphs processing already complete ({processed_count} records)")
                 df_paragraphs = df_output_paragraphs  # Use existing data
         else:
-            paragraphs_embeddings = process_func(df_paragraphs['text'].tolist())
+            paragraphs_texts = df_paragraphs['text'].tolist()
+            # Add progress bar for all texts
+            pbar = tqdm(total=len(paragraphs_texts), desc="Processing paragraphs")
+            def progress_wrapper(func):
+                def wrapper(texts):
+                    result = func(texts)
+                    pbar.update(len(texts))
+                    return result
+                return wrapper
+            wrapped_process_func = progress_wrapper(process_func)
+            paragraphs_embeddings = wrapped_process_func(paragraphs_texts)
+            pbar.close()
             df_paragraphs['embedding'] = paragraphs_embeddings
             df_paragraphs.to_csv(output_paragraphs, index=False)
             print(f"Saved paragraphs embeddings to {output_paragraphs}")
