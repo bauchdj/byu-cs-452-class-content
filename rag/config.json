@@ -1,4 +1,5 @@
 {
     "openaiKey": "insert your OpenAI API key here",
+    "googleProjectId": "insert your Google Project ID here",
     "years": 7
 }

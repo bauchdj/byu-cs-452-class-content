@@ -1,0 +1,32 @@
+# RAG Embeddings Generator
+
+This project generates embeddings for text data using different AI providers.
+
+## Files
+
+- `openai_embeddings.py`: Generates embeddings using OpenAI's API
+- `google_embeddings.py`: Generates embeddings using Google's Vertex AI
+- `free_embeddings.py`: Generates embeddings using Sentence Transformers (free)
+
+## Setup
+
+1. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+2. Configure API keys in `config.json`:
+   - For OpenAI: Add your OpenAI API key
+   - For Google: Add your Google Project ID
+
+## Usage
+
+Run any of the embedding scripts directly:
+
+```bash
+python openai_embeddings.py
+python google_embeddings.py
+python free_embeddings.py
+```
+
+Each script will process `SCRAPED_TALKS.csv` and `SCRAPED_PARAGRAPHS.csv` files and generate embeddings for the text content.

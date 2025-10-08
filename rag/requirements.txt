@@ -1,0 +1,6 @@
+openai
+pandas
+tiktoken
+vertexai
+sentence-transformers
+torch
