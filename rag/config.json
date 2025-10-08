@@ -1,5 +1,8 @@
 {
     "openaiKey": "insert your OpenAI API key here",
     "googleProjectId": "insert your Google Project ID here",
-    "years": 7
+    "years": 7,
+    "openaiEmbeddingModel": "text-embedding-3-small",
+    "googleEmbeddingModel": "text-embedding-005",
+    "sentenceTransformerModel": "multi-qa-mpnet-base-cos-v1"
 }

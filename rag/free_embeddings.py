@@ -1,9 +1,11 @@
-import pandas as pd
 from sentence_transformers import SentenceTransformer
 import torch
-import os
+from config_loader import load_config, get_sentence_transformer_model
 from base_embedding import process_csv_files, process_all_at_once
 
+# Load configuration
+config = load_config()
+sentence_transformer_model = get_sentence_transformer_model(config)
 
 def get_free_embeddings(texts):
     """
@@ -16,7 +18,7 @@ def get_free_embeddings(texts):
         List of embeddings
     """
     # Initialize the sentence transformer model
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    model = SentenceTransformer(sentence_transformer_model)
 
     # Move model to GPU if available
     if torch.cuda.is_available():

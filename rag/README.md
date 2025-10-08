@@ -17,9 +17,10 @@ This project generates embeddings for text data using different AI providers.
    pip install -r requirements.txt
    ```
 
-2. Configure API keys in `config.json`:
+2. Configure API keys and models in `config.json`:
    - For OpenAI: Add your OpenAI API key
    - For Google: Add your Google Project ID
+   - Embedding models for each provider can be configured in the config file
 
 ## Usage
 
