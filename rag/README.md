@@ -7,6 +7,8 @@ This project generates embeddings for text data using different AI providers.
 - `openai_embeddings.py`: Generates embeddings using OpenAI's API
 - `google_embeddings.py`: Generates embeddings using Google's Vertex AI
 - `free_embeddings.py`: Generates embeddings using Sentence Transformers (free)
+- `config_loader.py`: Common module for loading configuration from `config.json`
+- `base_embedding.py`: Common module with shared embedding functionality
 
 ## Setup
 
