@@ -1,6 +1,11 @@
+beautifulsoup4
+lxml
+numpy
 openai
 pandas
-tiktoken
-vertexai
+scikit-learn
 sentence-transformers
+tiktoken
 torch
+urllib3
+vertexai
