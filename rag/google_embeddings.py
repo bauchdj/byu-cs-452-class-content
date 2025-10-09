@@ -61,5 +61,7 @@ if __name__ == "__main__":
         "SCRAPED_PARAGRAPHS.csv",
         "google",
         process_google_embeddings,
-        "google"
+        "google",
+        resume=True,
+        chunk_size=100
     )

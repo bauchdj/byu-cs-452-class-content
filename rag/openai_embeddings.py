@@ -49,5 +49,6 @@ if __name__ == "__main__":
         "openai",
         process_openai_embeddings,
         "openai",
-        resume=True
+        resume=True,
+        chunk_size=100
     )

@@ -83,5 +83,6 @@ if __name__ == "__main__":
         "google_genai",
         process_google_genai_embeddings,
         "google_genai",
-        resume=True
+        resume=True,
+        chunk_size=100
     )

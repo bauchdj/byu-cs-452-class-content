@@ -122,9 +122,9 @@ def save_embeddings_to_csv(texts, embeddings, output_file):
     df.to_csv(output_file, index=False)
     
 
-def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, process_func, prefix, resume=True):
+def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, process_func, prefix, resume=True, chunk_size=100):
     """
-    Process CSV files and generate embeddings.
+    Process CSV files and generate embeddings with incremental saving.
     
     Args:
         input_talks_file: Path to the talks CSV file
@@ -133,6 +133,7 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
         process_func: Function to process texts and generate embeddings
         prefix: Prefix for output files
         resume: Whether to resume from existing output files if they exist
+        chunk_size: Number of texts to process before saving
     """
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
@@ -153,21 +154,33 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
             
             if processed_count < total_count:
                 print(f"Resuming talks processing from record {processed_count}/{total_count}")
-                remaining_texts = df_talks['text'].tolist()[processed_count:]
-                # Add progress bar for remaining texts
-                pbar = tqdm(total=len(remaining_texts), desc="Processing remaining talks")
-                def progress_wrapper(func):
-                    def wrapper(texts):
-                        result = func(texts)
-                        pbar.update(len(texts))
-                        return result
-                    return wrapper
-                wrapped_process_func = progress_wrapper(process_func)
-                remaining_embeddings = wrapped_process_func(remaining_texts)
+                # Process in chunks with incremental saving
+                texts = df_talks['text'].tolist()
+                all_embeddings = df_output_talks['embedding'].tolist() if 'embedding' in df_output_talks.columns else []
+                
+                # Progress bar for remaining texts
+                pbar = tqdm(total=total_count, desc="Processing talks", initial=processed_count)
+                
+                # Process remaining texts in chunks
+                for i in range(processed_count, total_count, chunk_size):
+                    chunk_end = min(i + chunk_size, total_count)
+                    chunk_texts = texts[i:chunk_end]
+                    chunk_embeddings = process_func(chunk_texts)
+                    all_embeddings.extend(chunk_embeddings)
+                    
+                    # Update progress bar
+                    pbar.update(len(chunk_texts))
+                    
+                    # Save progress incrementally
+                    df_talks_partial = df_talks.copy()
+                    df_talks_partial['embedding'] = all_embeddings + [None] * (len(df_talks_partial) - len(all_embeddings))
+                    # Only keep rows that have embeddings
+                    df_talks_partial = df_talks_partial.iloc[:len(all_embeddings)]
+                    df_talks_partial.to_csv(output_talks, index=False)
+                
                 pbar.close()
                 
-                # Combine existing and new embeddings
-                all_embeddings = df_output_talks['embedding'].tolist() + remaining_embeddings
+                # Final save with all embeddings
                 df_talks['embedding'] = all_embeddings
                 df_talks.to_csv(output_talks, index=False)
                 print(f"Saved talks embeddings to {output_talks}")
@@ -175,19 +188,35 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
                 print(f"Talks processing already complete ({processed_count} records)")
                 df_talks = df_output_talks  # Use existing data
         else:
-            talks_texts = df_talks['text'].tolist()
-            # Add progress bar for all texts
-            pbar = tqdm(total=len(talks_texts), desc="Processing talks")
-            def progress_wrapper(func):
-                def wrapper(texts):
-                    result = func(texts)
-                    pbar.update(len(texts))
-                    return result
-                return wrapper
-            wrapped_process_func = progress_wrapper(process_func)
-            talks_embeddings = wrapped_process_func(talks_texts)
+            # Process all texts in chunks with incremental saving
+            texts = df_talks['text'].tolist()
+            total_count = len(texts)
+            all_embeddings = []
+            
+            # Progress bar for all texts
+            pbar = tqdm(total=total_count, desc="Processing talks")
+            
+            # Process texts in chunks
+            for i in range(0, total_count, chunk_size):
+                chunk_end = min(i + chunk_size, total_count)
+                chunk_texts = texts[i:chunk_end]
+                chunk_embeddings = process_func(chunk_texts)
+                all_embeddings.extend(chunk_embeddings)
+                
+                # Update progress bar
+                pbar.update(len(chunk_texts))
+                
+                # Save progress incrementally
+                df_talks_partial = df_talks.copy()
+                df_talks_partial['embedding'] = all_embeddings + [None] * (len(df_talks_partial) - len(all_embeddings))
+                # Only keep rows that have embeddings
+                df_talks_partial = df_talks_partial.iloc[:len(all_embeddings)]
+                df_talks_partial.to_csv(output_talks, index=False)
+            
             pbar.close()
-            df_talks['embedding'] = talks_embeddings
+            
+            # Final save with all embeddings
+            df_talks['embedding'] = all_embeddings
             df_talks.to_csv(output_talks, index=False)
             print(f"Saved talks embeddings to {output_talks}")
         
@@ -209,21 +238,33 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
             
             if processed_count < total_count:
                 print(f"Resuming paragraphs processing from record {processed_count}/{total_count}")
-                remaining_texts = df_paragraphs['text'].tolist()[processed_count:]
-                # Add progress bar for remaining texts
-                pbar = tqdm(total=len(remaining_texts), desc="Processing remaining paragraphs")
-                def progress_wrapper(func):
-                    def wrapper(texts):
-                        result = func(texts)
-                        pbar.update(len(texts))
-                        return result
-                    return wrapper
-                wrapped_process_func = progress_wrapper(process_func)
-                remaining_embeddings = wrapped_process_func(remaining_texts)
+                # Process in chunks with incremental saving
+                texts = df_paragraphs['text'].tolist()
+                all_embeddings = df_output_paragraphs['embedding'].tolist() if 'embedding' in df_output_paragraphs.columns else []
+                
+                # Progress bar for remaining texts
+                pbar = tqdm(total=total_count, desc="Processing paragraphs", initial=processed_count)
+                
+                # Process remaining texts in chunks
+                for i in range(processed_count, total_count, chunk_size):
+                    chunk_end = min(i + chunk_size, total_count)
+                    chunk_texts = texts[i:chunk_end]
+                    chunk_embeddings = process_func(chunk_texts)
+                    all_embeddings.extend(chunk_embeddings)
+                    
+                    # Update progress bar
+                    pbar.update(len(chunk_texts))
+                    
+                    # Save progress incrementally
+                    df_paragraphs_partial = df_paragraphs.copy()
+                    df_paragraphs_partial['embedding'] = all_embeddings + [None] * (len(df_paragraphs_partial) - len(all_embeddings))
+                    # Only keep rows that have embeddings
+                    df_paragraphs_partial = df_paragraphs_partial.iloc[:len(all_embeddings)]
+                    df_paragraphs_partial.to_csv(output_paragraphs, index=False)
+                
                 pbar.close()
                 
-                # Combine existing and new embeddings
-                all_embeddings = df_output_paragraphs['embedding'].tolist() + remaining_embeddings
+                # Final save with all embeddings
                 df_paragraphs['embedding'] = all_embeddings
                 df_paragraphs.to_csv(output_paragraphs, index=False)
                 print(f"Saved paragraphs embeddings to {output_paragraphs}")
@@ -231,19 +272,35 @@ def process_csv_files(input_talks_file, input_paragraphs_file, output_dir, proce
                 print(f"Paragraphs processing already complete ({processed_count} records)")
                 df_paragraphs = df_output_paragraphs  # Use existing data
         else:
-            paragraphs_texts = df_paragraphs['text'].tolist()
-            # Add progress bar for all texts
-            pbar = tqdm(total=len(paragraphs_texts), desc="Processing paragraphs")
-            def progress_wrapper(func):
-                def wrapper(texts):
-                    result = func(texts)
-                    pbar.update(len(texts))
-                    return result
-                return wrapper
-            wrapped_process_func = progress_wrapper(process_func)
-            paragraphs_embeddings = wrapped_process_func(paragraphs_texts)
+            # Process all texts in chunks with incremental saving
+            texts = df_paragraphs['text'].tolist()
+            total_count = len(texts)
+            all_embeddings = []
+            
+            # Progress bar for all texts
+            pbar = tqdm(total=total_count, desc="Processing paragraphs")
+            
+            # Process texts in chunks
+            for i in range(0, total_count, chunk_size):
+                chunk_end = min(i + chunk_size, total_count)
+                chunk_texts = texts[i:chunk_end]
+                chunk_embeddings = process_func(chunk_texts)
+                all_embeddings.extend(chunk_embeddings)
+                
+                # Update progress bar
+                pbar.update(len(chunk_texts))
+                
+                # Save progress incrementally
+                df_paragraphs_partial = df_paragraphs.copy()
+                df_paragraphs_partial['embedding'] = all_embeddings + [None] * (len(df_paragraphs_partial) - len(all_embeddings))
+                # Only keep rows that have embeddings
+                df_paragraphs_partial = df_paragraphs_partial.iloc[:len(all_embeddings)]
+                df_paragraphs_partial.to_csv(output_paragraphs, index=False)
+            
             pbar.close()
-            df_paragraphs['embedding'] = paragraphs_embeddings
+            
+            # Final save with all embeddings
+            df_paragraphs['embedding'] = all_embeddings
             df_paragraphs.to_csv(output_paragraphs, index=False)
             print(f"Saved paragraphs embeddings to {output_paragraphs}")
         

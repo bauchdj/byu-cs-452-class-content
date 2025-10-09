@@ -58,5 +58,6 @@ if __name__ == "__main__":
         "free",
         process_free_embeddings,
         "free",
-        resume=True
+        resume=True,
+        chunk_size=100
     )
