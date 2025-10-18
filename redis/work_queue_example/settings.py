@@ -1,7 +1,13 @@
+# load env
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # initialize Redis connection settings
-REDIS_HOST = "somethinglikethis.c1.asia-northeast1-1.gce.cloud.redislabs.com"
-REDIS_PORT = 17561 # <-- likely need to change this too!
-REDIS_PASSWORD = "DFDSKLFEI some password LKDJFLSDKFJD"
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 REDIS_DB = 0
 
 # initialize constants used to control image spatial dimensions and
