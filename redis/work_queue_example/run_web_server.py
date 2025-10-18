@@ -12,6 +12,7 @@ import uuid
 import time
 import json
 import io
+import threading
 
 # initialize our Flask application and Redis server
 app = flask.Flask(__name__)
@@ -64,35 +65,46 @@ def predict():
 			
 			# Create a pubsub object for this specific request
 			pubsub = db.pubsub()
-			pubsub.subscribe(f"result__{k}")
+			
+			# Use a threading event to signal when the result is received
+			result_event = threading.Event()
+			response_data = {'data': data}
+			def message_handler(message):
+				if message['type'] == 'message':
+					response_data['data']["predictions"] = json.loads(message['data'])
+					response_data['data']["success"] = True
+					result_event.set()
+			
+			# Subscribe to the result channel with the callback
+			pubsub.subscribe(**{f"result__{k}": message_handler})
+			
+			# Start the subscription in a separate thread
+			thread = pubsub.run_in_thread(sleep_time=0.001)
 			
 			# Add the classification ID + image to the queue
 			db.rpush(settings.IMAGE_QUEUE, json.dumps(d))
 
-			# Wait for the result notification
+			# Wait for the result notification with a timeout
 			try:
-				# Get the message with a timeout
-				message = pubsub.get_message(timeout=30.0)
-				if message and message['type'] == 'message':
-					# Parse the result
-					data["predictions"] = json.loads(message['data'])
-					# indicate that the request was a success
-					data["success"] = True
-				else:
-					# Timeout occurred
-					data["error"] = "Request timeout"
+				# Wait for the result event or timeout
+				if not result_event.wait(timeout=settings.SERVER_TIMEOUT):
+					response_data['data']["error"] = "Request timeout"
 			except Exception as e:
-				data["error"] = str(e)
+				response_data['data']["error"] = str(e)
 			finally:
-				# Clean up: unsubscribe and delete the result from database
+				# Clean up: stop the thread, unsubscribe and delete the result from database
+				try:
+					thread.stop()
+				except:
+					pass
 				pubsub.unsubscribe(f"result__{k}")
 				try:
 					db.delete(k)
 				except:
 					pass
-
-	# return the data dictionary as a JSON response
-	return flask.jsonify(data)
+			
+			# Return the data dictionary as a JSON response
+			return flask.jsonify(response_data['data'])
 
 # for debugging purposes, it's helpful to start the Flask testing
 # server (don't use this for production
