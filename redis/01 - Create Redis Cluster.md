@@ -1,25 +1,28 @@
-The easiest way to get Redis up and running is to use the Redis Cloud. Go to https://redis.com/redis-enterprise-cloud/overview and click on "Try Free" and sign up for a free account. Once you are in, you should be able to create a free database instance of Redis by choosing a Cloud Platform (I chose Google Cloud Platform) and clicking "Let's Start Free". 
+# Creating a Redis Cluster
 
-If you click on your database in the control panel that should appear after you clicked on "Let's Start Free", you should see the settings for your database. There are many settings but the important ones for now are:
+The easiest way to get Redis up and running is to use Redis Cloud:
 
-- Public Endpoint: Made up of a url and a port
-- Default User
-- Default User Password
+1. Go to [Redis Cloud](https://redis.com/redis-enterprise-cloud/overview) and click “Try for Free”. Sign up for a free account.  
+2. Create a free Redis database instance by choosing a Cloud Platform (I chose Google Cloud Platform) and click “Let's Start Free”.  
+3. Click your database in the control panel and look for these settings under configuration (You will need them to connect to your Redis database):  
+   - Public Endpoint (this is your URL and port)  
+   - Default User 
+   - Default User Password
 
-You will need these values to connect to your now running Redis database.
+A good client for managing your database is RedisInsight. You can download that here: https://redis.com/redis-enterprise/redis-insight/
 
-A good client to connect to your database, view data, configure notifications, and run client commands is RedisInsight available at https://redis.com/redis-enterprise/redis-insight/  
+4. In RedisInsight, click **“Add Redis Database”** and enter your database settings from earlier.  
+5. Click on your database to connect to it. RedisInsight opens in the **Keys** view (notice the highlighted key icon on the left). You can use the refresh button to view keys. Initially, you won’t see any.  
+6. Click the Workbench icon (looks like a document) on the left to run Redis commands.  
 
-In RedisInsight, you can "Add Redis Database" which will open a settings dialog where you will enter the information for your Redis database. Then you should be able to click on your database and get a connection to it. 
+### Test Your Setup
 
-RedisInsight opens up in the Keys view (notice the highlighted key icon on the left). There is a refresh button in the Keys panel. Initially, you won't have any keys to display.
-
-Clicking on the Workbench (looks like a document) icon on the left will take you to a panel where you can enter Redis commands and run them.
-
-To test if everything is up and running, run a ping command
+Run the following command in the Workbench:
 
 ```
 ping
 ```
 
-You should get PONG in response
+You should get PONG in response.
+
+If that worked, you can now head over to the [readme.md](https://github.com/byu-cs-452/byu-cs-452-class-content/blob/main/redis/work_queue_example/readme.md) in the work_queue_example folder to get started on the rest of the project!
