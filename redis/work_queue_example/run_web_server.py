@@ -71,13 +71,18 @@ def predict():
 
 			# Wait for the result notification
 			try:
-				# Get the message with a timeout
-				message = pubsub.get_message(timeout=30.0)
-				if message and message['type'] == 'message':
-					# Parse the result
-					data["predictions"] = json.loads(message['data'])
-					# indicate that the request was a success
-					data["success"] = True
+				# Poll for messages with a timeout
+				import time
+				start_time = time.time()
+				while time.time() - start_time < 30.0:  # 30 second timeout
+					message = pubsub.get_message()
+					if message and message['type'] == 'message':
+						# Parse the result
+						data["predictions"] = json.loads(message['data'])
+						# indicate that the request was a success
+						data["success"] = True
+						break
+					time.sleep(0.1)  # Small delay to prevent busy waiting
 				else:
 					# Timeout occurred
 					data["error"] = "Request timeout"
