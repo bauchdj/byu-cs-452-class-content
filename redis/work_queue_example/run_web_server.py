@@ -13,6 +13,7 @@ import time
 import json
 import io
 import threading
+import logger
 
 # initialize our Flask application and Redis server
 app = flask.Flask(__name__)
@@ -41,6 +42,7 @@ def prepare_image(image, target):
 
 @app.route("/")
 def homepage():
+    logger.log_action("web_server", "Homepage accessed")
     return "Welcome to the PyImageSearch Keras REST API!"
 
 
@@ -69,6 +71,10 @@ def predict():
             image = helpers.base64_encode_image(image)
             d = {"id": k, "image": image}
 
+            logger.log_action(
+                "web_server", f"Received image for prediction with ID: {k}"
+            )
+
             # Create a pubsub object for this specific request
             pubsub = db.pubsub()
 
@@ -80,6 +86,9 @@ def predict():
                 if message["type"] == "message":
                     response_data["data"]["predictions"] = json.loads(message["data"])
                     response_data["data"]["success"] = True
+                    logger.log_action(
+                        "web_server", f"Received prediction result for ID: {k}"
+                    )
                     result_event.set()
 
             # Subscribe to the result channel with the callback
@@ -96,8 +105,12 @@ def predict():
                 # Wait for the result event or timeout
                 if not result_event.wait(timeout=settings.SERVER_TIMEOUT):
                     response_data["data"]["error"] = "Request timeout"
+                    logger.log_action("web_server", f"Request timeout for ID: {k}")
             except Exception as e:
                 response_data["data"]["error"] = str(e)
+                logger.log_action(
+                    "web_server", f"Error processing request for ID {k}: {str(e)}"
+                )
             finally:
                 # Clean up: stop the thread, unsubscribe and delete the result from database
                 try:
@@ -117,5 +130,5 @@ def predict():
 # for debugging purposes, it's helpful to start the Flask testing
 # server (don't use this for production
 if __name__ == "__main__":
-    print("* Starting web service...")
+    logger.log_action("web_server", "Starting web service...")
     app.run()

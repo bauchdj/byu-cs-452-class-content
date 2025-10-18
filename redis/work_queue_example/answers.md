@@ -4,14 +4,23 @@
 
 3. Results:
 ```sh
-1. church: 0.4136 
-2. castle: 0.3930 
-3. monastery: 0.1733 
-4. palace: 0.0041 
+1. church: 0.4136
+2. castle: 0.3930
+3. monastery: 0.1733
+4. palace: 0.0041
 5. vault: 0.0034
 ```
 
-4. The model server pulls batches and does not remove them from the queue until they are done. This will cause race conditions. The web server and model server both poll the queue instead of setting up a socket to receive notifications. 
+4. The model server pulls batches and does not remove them from the queue until they are done. This will cause race conditions.
+
+    After updates:
+
+    1. Web server receives an image, generates a unique ID, and pushes it to the Redis queue
+    2. Model servers block-wait on the queue; Redis ensures only one server gets each item
+    3. When a model server finishes processing, it adds the result to the queue using the unique ID as the key
+    4. The web server checks the queue for the result using the unique ID as the key
+
+5. The web server and model server both poll the queue instead of setting up a socket to receive notifications.
 
     After updates:
 
@@ -21,4 +30,6 @@
     4. The web server receives the notification and immediately returns the result to the client
     5. If the web server times out, it will return a timeout error
 
-5. 
+6. 
+
+7. Code is in logger.py

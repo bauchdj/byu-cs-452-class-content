@@ -17,7 +17,6 @@ NUM_REQUESTS = 50
 NUM_REQUESTS = 500
 SLEEP_COUNT = 0.05
 
-
 def call_predict_endpoint(n):
     # load the input image and construct the payload for the request
     image = open(IMAGE_PATH, "rb").read()
@@ -31,15 +30,13 @@ def call_predict_endpoint(n):
         print("[INFO] thread {} OK".format(n))
 
         # loop over the predictions and display them
-        for i, result in enumerate(r["predictions"]):
-            print(
-                "{}. {}: {:.4f}".format(i + 1, result["label"], result["probability"])
-            )
+        for (i, result) in enumerate(r["predictions"]):
+            print("{}. {}: {:.4f}".format(i + 1, result["label"], result["probability"]))
+
 
     # otherwise, the request failed
     else:
         print("[INFO] thread {} FAILED".format(n))
-
 
 # loop over the number of threads
 for i in range(0, NUM_REQUESTS):

@@ -7,6 +7,7 @@ import helpers
 import redis
 import time
 import json
+import logger
 
 import os
 
@@ -25,9 +26,9 @@ def classify_process():
     # load the pre-trained Keras model (here we are using a model
     # pre-trained on ImageNet and provided by Keras, but you can
     # substitute in your own networks just as easily)
-    print("* Loading model...")
+    logger.log_action("model_server", "Loading model...")
     model = ResNet50(weights="imagenet")
-    print("* Model loaded")
+    logger.log_action("model_server", "Model loaded successfully")
 
     # Process images one at a time as they arrive in the queue
     while True:
@@ -51,7 +52,7 @@ def classify_process():
                 )
 
                 # classify the image
-                print("* Processing image ID: {}".format(q["id"]))
+                logger.log_action("model_server", f"Processing image ID: {q['id']}")
                 preds = model.predict(image)
                 results = imagenet_utils.decode_predictions(preds)
 
@@ -70,9 +71,9 @@ def classify_process():
                 db.set(q["id"], json.dumps(output))
                 db.publish(f"result__{q['id']}", json.dumps(output))
 
-                print("* Processed image ID: {}".format(q["id"]))
+                logger.log_action("model_server", f"Processed image ID: {q['id']}")
         except Exception as e:
-            print("Error processing image: {}".format(str(e)))
+            logger.log_action("model_server", f"Error processing image: {str(e)}")
 
 
 # if this is the main thread of execution start the model server
