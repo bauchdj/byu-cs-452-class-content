@@ -13,8 +13,12 @@
 
 4. The model server pulls batches and does not remove them from the queue until they are done. This will cause race conditions. The web server and model server both poll the queue instead of setting up a socket to receive notifications. 
 
-After updates:
-1. Web server receives an image, generates a unique ID, and pushes it to the Redis queue
-2. Model servers block-wait on the queue; Redis ensures only one server gets each item
-3. When a model server finishes processing, it publishes the result to a dedicated channel
-4. The web server receives the notification and immediately returns the result to the client
+    After updates:
+
+    1. Web server receives an image, generates a unique ID, and pushes it to the Redis queue
+    2. Model servers block-wait on the queue; Redis ensures only one server gets each item
+    3. When a model server finishes processing, it publishes the result to a dedicated channel
+    4. The web server receives the notification and immediately returns the result to the client
+    5. If the web server times out, it will return a timeout error
+
+5. 

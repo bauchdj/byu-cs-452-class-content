@@ -29,4 +29,7 @@ if r["success"]:
 
 # otherwise, the request failed
 else:
-	print("Request failed")
+	if "error" in r:
+		print(r["error"])
+	else:
+		print("Request failed")
