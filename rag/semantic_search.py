@@ -3,12 +3,167 @@ from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 from config_loader import load_config, get_sentence_transformer_model, get_google_ai_key, get_google_embedding_model
 import ast
+import json
+import pandas as pd
+
+# TODO: make results easy to feed into AI
+# then have AI answers the question
+# then display the semantic search results with the AI generation (Retrieval w/ Generation)
+
+def format_results_for_ai_generation(results, data_type):
+    """
+    Format search results specifically for AI generation.
+    
+    Args:
+        results (pandas.DataFrame): Search results
+        data_type (str): Type of data (clusters, paragraphs, talks)
+    
+    Returns:
+        str: Formatted context string for AI generation
+    """    
+    context = ""
+    
+    for idx, row in results.iterrows():
+        context += f"\nResult {idx + 1} (Similarity: {row['similarity']:.4f})\n"
+        context += f"Title: {row['title']}\n"
+        context += f"Speaker: {row['speaker']}\n"
+        
+        if 'year' in row and 'season' in row:
+            context += f"Year: {row['year']} {row['season']}\n"
+        
+        # Add text content
+        if data_type == "clusters" and 'text' in row:
+            # For clusters, text is a list of paragraphs
+            try:
+                paragraphs = ast.literal_eval(row['text'])
+                context += "Content:\n"
+                for i, paragraph in enumerate(paragraphs[:3]):  # Show top 3 paragraphs
+                    context += f"  {paragraph}\n"
+            except:
+                context += f"Content: {row['text']}\n"
+        elif 'text' in row:
+            # For talks and paragraphs, text is a single string
+            context += f"Content: {row['text']}\n"
+        
+        context += "-" * 40 + "\n"
+    
+    return context
+
+def generate_answer_with_context(query, context, model=None):
+    """
+    Generate an answer to a query using provided context.
+    
+    Args:
+        query (str): The user's query
+        context (str): Context information from semantic search results
+        model: Google Generative AI model (if None, uses the global generation_model)
+    
+    Returns:
+        str: Generated answer
+    """
+    if model is None:
+        model = generation_model
+    
+    if model is None:
+        return "Error: Google Generative AI model not configured for text generation."
+    
+    # Create the prompt
+    prompt = f"""
+You are a helpful assistant that answers questions based on provided context.
+
+Context information:
+{context}
+
+Question: {query}
+
+Please provide a comprehensive answer based on the context above. If the context doesn't contain relevant information to answer the question, please state that clearly.
+"""
+    
+    try:
+        # Generate the response
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Error generating answer: {e}"
+
+def create_json_output(query, results, data_type, source, model_name, ai_answer):
+    """
+    Create JSON formatted output for analytics.
+    
+    Args:
+        query (str): The search query
+        results (pandas.DataFrame): Search results
+        data_type (str): Type of data (clusters, paragraphs, talks)
+        source (str): Data source (free or google_genai)
+        model_name (str): Name of the model used
+        ai_answer (str): AI generated answer
+    
+    Returns:
+        dict: JSON serializable dictionary
+    """
+    # Convert DataFrame to list of dictionaries
+    results_list = []
+    for idx, row in results.iterrows():
+        result_dict = {
+            'rank': idx + 1,
+            'similarity': float(row['similarity']),
+            'title': row['title'],
+            'speaker': row['speaker'],
+            'url': row['url']
+        }
+        
+        # Add optional fields if they exist
+        if 'calling' in row:
+            result_dict['calling'] = row['calling']
+        if 'year' in row and 'season' in row:
+            result_dict['year'] = row['year']
+            result_dict['season'] = row['season']
+        if 'cluster_id' in row:
+            result_dict['cluster_id'] = row['cluster_id']
+        if 'paragraph_number' in row:
+            result_dict['paragraph_number'] = row['paragraph_number']
+        
+        # Add text content
+        if data_type == "clusters" and 'text' in row:
+            try:
+                paragraphs = ast.literal_eval(row['text'])
+                result_dict['text'] = paragraphs[:3]  # Top 3 paragraphs
+            except:
+                result_dict['text'] = row['text']
+        elif 'text' in row:
+            result_dict['text'] = row['text']
+        
+        results_list.append(result_dict)
+    
+    # Create the JSON output structure
+    json_output = {
+        'query': query,
+        'model': model_name,
+        'source': source,
+        'data_type': data_type,
+        'timestamp': pd.Timestamp.now().isoformat(),
+        'result_count': len(results_list),
+        'results': results_list,
+        'ai_answer': ai_answer
+    }
+    
+    return json_output
 
 # Load the semantic search functions from our module
 from semantic_search_generic import load_embedding_data, search_embeddings, display_results
 
 # Load configuration
 config = load_config()
+
+# Configure Google Generative AI for text generation
+try:
+    google_ai_key = get_google_ai_key(config)
+    genai.configure(api_key=google_ai_key)
+    # Initialize the model for text generation
+    generation_model = genai.GenerativeModel('gemini-2.5-flash')
+except Exception as e:
+    print(f"Warning: Could not configure Google Generative AI for text generation: {e}")
+    generation_model = None
 
 queries = [
     "How can I gain a testimony of Jesus Christ?",
@@ -115,17 +270,23 @@ def format_results_for_file(results, data_type, source, model_name, query):
     
     return output
 
-def semantic_search(output_file="semantic_search_results.txt"):
+def semantic_search(output_file="semantic_search_results.txt", json_output_file="semantic_search_results.json"):
     """
     Example of how to perform semantic search on all embedding data using both SentenceTransformer and Google GenAI.
     
     Args:
         output_file (str): Path to output file for results
+        json_output_file (str): Path to JSON output file for analytics
     """
     # Open output file
     with open(output_file, 'w') as f:
         f.write("SEMANTIC SEARCH RESULTS\n")
         f.write("=" * 50 + "\n\n")
+    
+    # Initialize JSON output file
+    json_outputs = []
+    with open(json_output_file, 'w') as f:
+        json.dump([], f)
     
     # Define file paths for both free and google_genai
     data_files = {
@@ -192,10 +353,31 @@ def semantic_search(output_file="semantic_search_results.txt"):
                     results = search_embeddings(query_embedding, df, top_k=3)
                     if not results.empty:
                         display_results(results, data_type)
+                        
+                        # Generate AI answer using the context
+                        context = format_results_for_ai_generation(results, data_type)
+                        ai_answer = generate_answer_with_context(query, context)
+                        
+                        # Display AI answer
+                        print(f"\nAI GENERATED ANSWER:")
+                        print("=" * 40)
+                        print(ai_answer)
+                        print("=" * 40)
+                        
+                        # Create JSON output for analytics
+                        json_output = create_json_output(query, results, data_type, source, "SentenceTransformer", ai_answer)
+                        
                         # Write results to file
                         formatted_results = format_results_for_file(results, data_type, source, "SentenceTransformer", query)
                         with open(output_file, 'a') as f:
                             f.write(formatted_results)
+                            f.write(f"\nAI GENERATED ANSWER:\n")
+                            f.write("=" * 40 + "\n")
+                            f.write(f"{ai_answer}\n")
+                            f.write("=" * 40 + "\n\n")
+                            # Write JSON output
+                            f.write(f"\nJSON OUTPUT:\n")
+                            f.write(json.dumps(json_output, indent=2) + "\n\n")
                     else:
                         print("  No results found.")
                         with open(output_file, 'a') as f:
@@ -231,16 +413,42 @@ def semantic_search(output_file="semantic_search_results.txt"):
                     results = search_embeddings(query_embedding, df, top_k=3)
                     if not results.empty:
                         display_results(results, data_type)
+                        
+                        # Generate AI answer using the context
+                        context = format_results_for_ai_generation(results, data_type)
+                        ai_answer = generate_answer_with_context(query, context)
+                        
+                        # Display AI answer
+                        print(f"\nAI GENERATED ANSWER:")
+                        print("=" * 40)
+                        print(ai_answer)
+                        print("=" * 40)
+                        
+                        # Create JSON output for analytics
+                        json_output = create_json_output(query, results, data_type, source, "Google GenAI", ai_answer)
+                        
                         # Write results to file
                         formatted_results = format_results_for_file(results, data_type, source, "Google GenAI", query)
                         with open(output_file, 'a') as f:
                             f.write(formatted_results)
+                            f.write(f"\nAI GENERATED ANSWER:\n")
+                            f.write("=" * 40 + "\n")
+                            f.write(f"{ai_answer}\n")
+                            f.write("=" * 40 + "\n\n")
+                            # Write JSON output
+                            f.write(f"\nJSON OUTPUT:\n")
+                            f.write(json.dumps(json_output, indent=2) + "\n\n")
                     else:
                         print("  No results found.")
                         with open(output_file, 'a') as f:
                             f.write("  No results found.\n")
     
+    # Write all JSON outputs to separate file
+    with open(json_output_file, 'w') as f:
+        json.dump(json_outputs, f, indent=2)
+    
     print(f"\nResults have been saved to {output_file}")
+    print(f"JSON analytics data has been saved to {json_output_file}")
 
 if __name__ == "__main__":
     semantic_search()

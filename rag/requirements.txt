@@ -9,3 +9,4 @@ tiktoken
 torch
 urllib3
 vertexai
+google-generativeai

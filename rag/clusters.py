@@ -105,5 +105,5 @@ def cluster_paragraph_embeddings(csv_file, k, prefix):
 if __name__ == "__main__":
     print("Start paragraphs:", datetime.now().strftime("%H:%M:%S"))
     cluster_paragraph_embeddings("free_paragraphs.csv", 3, "free")
-    cluster_paragraph_embeddings("openai_paragraphs.csv", 3, "openai")
+    cluster_paragraph_embeddings("google_genai_paragraphs.csv", 3, "google_genai")
     print("Finish:", datetime.now().strftime("%H:%M:%S"))
