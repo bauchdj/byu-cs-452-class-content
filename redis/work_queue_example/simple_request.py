@@ -22,14 +22,13 @@ r = requests.post(KERAS_REST_API_URL, files=payload).json()
 
 # ensure the request was sucessful
 if r["success"]:
-	# loop over the predictions and display them
-	for (i, result) in enumerate(r["predictions"]):
-		print("{}. {}: {:.4f}".format(i + 1, result["label"],
-			result["probability"]))
+    # loop over the predictions and display them
+    for i, result in enumerate(r["predictions"]):
+        print("{}. {}: {:.4f}".format(i + 1, result["label"], result["probability"]))
 
 # otherwise, the request failed
 else:
-	if "error" in r:
-		print(r["error"])
-	else:
-		print("Request failed")
+    if "error" in r:
+        print(r["error"])
+    else:
+        print("Request failed")

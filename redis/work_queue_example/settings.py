@@ -5,18 +5,20 @@ import redis
 
 load_dotenv()
 
+
 def enable_redis_notifications(host, port, password=None):
     """Enable Redis keyspace notifications for pub/sub functionality"""
     try:
         # Connect to Redis
         db = redis.StrictRedis(host=host, port=port, password=password, db=0)
         # Enable keyspace notifications for all events
-        db.config_set('notify-keyspace-events', 'KEA')
+        db.config_set("notify-keyspace-events", "KEA")
         print("Redis keyspace notifications enabled successfully.")
         return True
     except Exception as e:
         print(f"Failed to enable Redis keyspace notifications: {e}")
         return False
+
 
 # initialize Redis connection settings
 REDIS_HOST = os.getenv("REDIS_HOST")
