@@ -3,10 +3,11 @@
 
 # import the necessary packages
 import requests
+import settings
 
 # initialize the Keras REST API endpoint URL along with the input
 # image path
-KERAS_REST_API_URL = "http://127.0.0.1:5000/predict"
+KERAS_REST_API_URL = f"http://127.0.0.1:{settings.SERVER_PORT}/predict"
 IMAGE_PATH = "jemma.png"
 IMAGE_PATH = "test.jpg"
 IMAGE_PATH = "dog.png"
@@ -20,7 +21,7 @@ payload = {"image": image}
 # submit the request
 r = requests.post(KERAS_REST_API_URL, files=payload).json()
 
-# ensure the request was sucessful
+# ensure the request was successful
 if r["success"]:
     # loop over the predictions and display them
     for i, result in enumerate(r["predictions"]):

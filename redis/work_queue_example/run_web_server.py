@@ -131,4 +131,4 @@ def predict():
 # server (don't use this for production
 if __name__ == "__main__":
     logger.log_action("web_server", "Starting web service...")
-    app.run()
+    app.run(port=settings.SERVER_PORT)

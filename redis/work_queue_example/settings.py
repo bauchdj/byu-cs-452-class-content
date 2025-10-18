@@ -36,6 +36,7 @@ IMAGE_DTYPE = "float32"
 # initialize constants used for server queuing
 IMAGE_QUEUE = "image_queue"
 BATCH_SIZE = 32
+SERVER_PORT = 5001
 SERVER_TIMEOUT = 30
 SERVER_SLEEP = 0.25
 CLIENT_SLEEP = 0.25

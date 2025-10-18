@@ -30,6 +30,20 @@
     4. The web server receives the notification and immediately returns the result to the client
     5. If the web server times out, it will return a timeout error
 
-6. 
+6. The provided stress_test.py didn't work because it started threads as daemon threads and didn't wait for them to complete.
+
+    Fixes applied:
+
+    1. Removed `t.daemon = True` which was causing threads to terminate when the main program exits
+    2. Added a list to keep track of all thread references
+    3. Used `t.join()` to wait for all threads to complete before the program terminates
+    4. Replaced the fixed sleep with proper thread synchronization
+
+    How it works:
+
+    1. Each thread is started normally (not as a daemon) and added to a list
+    2. After starting all threads, the main program iterates through the list and calls `join()` on each thread
+    3. The `join()` method blocks until the corresponding thread completes its execution
+    4. Only after all threads have completed does the main program terminate
 
 7. Code is in logger.py
