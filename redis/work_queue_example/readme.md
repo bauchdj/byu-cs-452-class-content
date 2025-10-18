@@ -82,7 +82,27 @@ python simple_request.py 
 
 ### 4. Concurrency and Scaling
 - Identify and Ddscribe the main issues that occur when multiple web servers (`run_web_server.py`) and/or multiple model servers (`run_model_server.py`) are running at the same time.    
-- Update the code to fix one issue, test that it works, and explain the solution using words and diagrams.  
+- Update the code to fix one issue, test that it works, and explain the solution using words and diagrams.
+
+**Solution Implemented:**
+
+The original implementation had several concurrency issues:
+1. Race conditions in model server processing where multiple servers could process the same batch
+2. Inefficient polling from web servers constantly checking for results
+3. No load distribution mechanism among multiple model servers
+
+**Fixes Applied:**
+1. **Model Server**: Updated to use `blpop` (blocking left pop) from the Redis queue, ensuring that each image is processed by exactly one model server, eliminating race conditions.
+2. **Web Server**: Replaced polling with Redis pub/sub notifications. Each web server now subscribes to a specific result channel and waits for notifications, eliminating the need for constant polling.
+3. **Redis Configuration**: Added a script to enable Redis keyspace notifications required for pub/sub functionality.
+
+**How it works:**
+1. Web server receives an image, generates a unique ID, and pushes it to the Redis queue
+2. Model servers block-wait on the queue; Redis ensures only one server gets each item
+3. When a model server finishes processing, it publishes the result to a dedicated channel
+4. The web server receives the notification and immediately returns the result to the client
+
+This approach eliminates race conditions and reduces overhead significantly compared to polling.  
 
 ### 5. Reducing Polling Overhead
 - Polling is reliable but it is the most expensive way to interact with a system.  

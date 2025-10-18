@@ -61,33 +61,35 @@ def predict():
 			k = str(uuid.uuid4())
 			image = helpers.base64_encode_image(image)
 			d = {"id": k, "image": image}
+			
+			# Create a pubsub object for this specific request
+			pubsub = db.pubsub()
+			pubsub.subscribe(f"result__{k}")
+			
+			# Add the classification ID + image to the queue
 			db.rpush(settings.IMAGE_QUEUE, json.dumps(d))
 
-			# keep looping until our model server returns the output
-			# predictions
-			while True:
-				# attempt to grab the output predictions
-				output = db.get(k)
-
-				# check to see if our model has classified the input
-				# image
-				if output is not None:
-					# add the output predictions to our data
-					# dictionary so we can return it to the client
-					output = output.decode("utf-8")
-					data["predictions"] = json.loads(output)
-
-					# delete the result from the database and break
-					# from the polling loop
+			# Wait for the result notification
+			try:
+				# Get the message with a timeout
+				message = pubsub.get_message(timeout=30.0)
+				if message and message['type'] == 'message':
+					# Parse the result
+					data["predictions"] = json.loads(message['data'])
+					# indicate that the request was a success
+					data["success"] = True
+				else:
+					# Timeout occurred
+					data["error"] = "Request timeout"
+			except Exception as e:
+				data["error"] = str(e)
+			finally:
+				# Clean up: unsubscribe and delete the result from database
+				pubsub.unsubscribe(f"result__{k}")
+				try:
 					db.delete(k)
-					break
-
-				# sleep for a small amount to give the model a chance
-				# to classify the input image
-				time.sleep(settings.CLIENT_SLEEP)
-
-			# indicate that the request was a success
-			data["success"] = True
+				except:
+					pass
 
 	# return the data dictionary as a JSON response
 	return flask.jsonify(data)
