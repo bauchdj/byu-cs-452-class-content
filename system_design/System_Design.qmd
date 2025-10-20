@@ -1,3 +1,14 @@
+---
+title: "System Design: Real-time Olympic Stats Platform"
+author: "David Bauch"
+date: "2025"
+format: 
+  pdf:
+    theme: cosmo
+    css: styles.css
+    toc: true
+---
+
 # System Design
 
 ## Learning Goals
@@ -23,7 +34,7 @@ Use Cloudflare for everything.
    - Draw a diagram showing all components and how requests flow.  
    - Explain how your system handles traffic and scales.
 
-```mermaid
+```{mermaid}
 graph TD
     A[Users/Viewers] --> B[Cloudflare CDN]
     B --> C[Cloudflare Workers]

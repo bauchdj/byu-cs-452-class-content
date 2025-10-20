@@ -1,3 +1,12 @@
+---
+title: "Scaling"
+author: "David Bauch"
+date: "2025"
+format: 
+  pdf:
+    toc: true
+---
+
 # Scaling
 
 ## Learning Goals
@@ -45,7 +54,7 @@ Your friend offers his network load balancer for free, which distributes request
 
 ### 1. System Design
 
-```mermaid
+```{mermaid}
 graph LR
     A[Client Requests] --> B[Load Balancer]
     B --> C[VM 1]
