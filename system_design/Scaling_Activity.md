@@ -41,4 +41,40 @@ Your friend offers his network load balancer for free, which distributes request
    - How many VMs would you need and how much would it cost to handle **200,000 RPS**?  
    - How many VMs would you need and how much would it cost to handle **10,000,000 RPS**?
 
+## Answers
 
+### 1. System Design
+
+```mermaid
+graph LR
+    A[Client Requests] --> B[Load Balancer]
+    B --> C[VM 1]
+    B --> D[VM 2]
+    B --> E[VM 3]
+    B --> F[...]
+```
+
+- **Load balancer** evenly/randomly distributes incoming requests across the pool.
+- **Each VM** handles up to 5,000 RPS independently.
+- **Scale out** by adding/removing VMs to meet target RPS.
+- Keep app instances **stateless** so any VM can serve any request (externalize session/state if needed).
+
+### 2. Cost Comparison
+
+- **Single server (200k RPS capacity):** $1.25/hour
+- **Small VM (5k RPS each):** $0.02/hour per VM
+- **Cost per RPS-hour**
+  - Single server: $1.25 / 200,000 ≈ $0.00000625
+  - Small VM: $0.02 / 5,000 = $0.000004
+- Result: Small VMs are cheaper per unit capacity and scale linearly.
+
+### 3. Scaling Calculations
+
+- **At 200,000 RPS**
+  - VMs needed: ceil(200,000 / 5,000) = 40
+  - Hourly cost: 40 × $0.02 = **$0.80/hour**
+  - Versus single server: $1.25/hour → savings ≈ **$0.45/hour (~36%)**
+
+- **At 10,000,000 RPS**
+  - VMs needed: ceil(10,000,000 / 5,000) = 2,000
+  - Hourly cost: 2,000 × $0.02 = **$40/hour**
